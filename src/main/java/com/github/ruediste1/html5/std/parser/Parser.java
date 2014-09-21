@@ -1,5 +1,7 @@
 package com.github.ruediste1.html5.std.parser;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.zip.ZipEntry;
@@ -8,6 +10,7 @@ import java.util.zip.ZipInputStream;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import com.github.ruediste1.html5.std.HtmlAttribute;
 import com.github.ruediste1.html5.std.HtmlElement;
@@ -15,12 +18,10 @@ import com.github.ruediste1.html5.std.HtmlStandard;
 
 public class Parser {
 
-	public static void main(String[] args) {
-		new Parser().parse().print();
-	}
-
 	/**
 	 * Parse from a web location
+	 * 
+	 * Warning: DOES NOT WORK, Input is truncated
 	 */
 	public HtmlStandard parse() {
 		HtmlStandard result = null;
@@ -68,25 +69,27 @@ public class Parser {
 	public HtmlStandard parse(Document dom) throws IOException {
 		HtmlStandard result = new HtmlStandard();
 
-		for (Element listElement : dom.getElementsByClass("element")) {
+		Elements tmp = dom.select("dl.element");
+		System.out.println(tmp.size());
+		for (Element listElement : tmp) {
 			// search backwards for header element do determine tag
 			String tag = null;
 			siblingLoop: for (int idx = listElement.elementSiblingIndex() - 1; idx >= 0; idx--) {
 				Element header = listElement.parent().child(idx);
 				if (!header.tagName().startsWith("h"))
-					continue;
-				for (Element dfn : header.getElementsByTag("dfn")) {
-					for (Element code : dfn.getElementsByTag("code")) {
-						tag = code.text();
-						break siblingLoop;
-					}
+					continue siblingLoop;
+				for (Element code : header.select("dfn code")) {
+					tag = code.text();
+					break siblingLoop;
 				}
 
 			}
 
 			// abort if tag has not been found
-			if (tag == null)
+			if (tag == null) {
+				System.out.println("Skipping element");
 				continue;
+			}
 
 			// create HtmlElement and add to result
 			HtmlElement element = new HtmlElement();

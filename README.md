@@ -11,8 +11,6 @@ The result is a object describing all HTML elements and the available attributes
 
 Code Sample:
 
-    // download the spec, parse it and print the resulting information
-    new Parser().parse().print();
     
     // load the spec from the classpath, parse it and print the result
     new Parser().parse(getClass().getResourceAsStream(...)).print();
