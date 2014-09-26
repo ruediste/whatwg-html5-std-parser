@@ -7,5 +7,7 @@
 .idea
 *.iml
 
+# Ignore analysis tools
+.clover
 
 /target/
