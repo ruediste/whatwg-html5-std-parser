@@ -1,1 +1,11 @@
+# Ignore eclipse files
+.settings
+.project
+.eclipse
+
+# Ignore idea files
+.idea
+*.iml
+
+
 /target/
