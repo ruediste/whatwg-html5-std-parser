@@ -1,19 +1,21 @@
-package com.github.ruediste1.html5.std.parser;
+package com.github.ruediste.html5.std.parser;
 
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.jsoup.*;
-import org.jsoup.nodes.*;
-import org.jsoup.select.Elements;
+import org.jsoup.Connection;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 
-import com.github.ruediste1.html5.std.HtmlAttribute;
-import com.github.ruediste1.html5.std.HtmlElement;
-import com.github.ruediste1.html5.std.HtmlStandard;
+import com.github.ruediste.html5.std.HtmlAttribute;
+import com.github.ruediste.html5.std.HtmlElement;
+import com.github.ruediste.html5.std.HtmlStandard;
 
 public class Parser {
     public static String DEFAULT_USER_AGENT = "Mozilla/5.0 (Windows NT 5.1; rv:31.0) Gecko/20100101 Firefox/31.0";
-    public static String[] DEFAULT_HEADER = {"Accept-Encoding", "gzip, deflated"};
+    public static String[] DEFAULT_HEADER = { "Accept-Encoding",
+            "gzip, deflated" };
     public static String LOCATION = "https://html.spec.whatwg.org/";
     public static int TIMEOUT_DURATION = 60000;
     public static int UNBOUNDED_SIZE = 0;
@@ -26,8 +28,6 @@ public class Parser {
 
     /**
      * Parse from a web location
-     * 
-     * Warning: DOES NOT WORK, Input is truncated
      */
     public HtmlStandard parse() {
         try {
@@ -65,9 +65,7 @@ public class Parser {
     public HtmlStandard parse(Document dom) throws IOException {
         HtmlStandard result = new HtmlStandard();
 
-        Elements tmp = dom.body().select("dl.element");
-        System.out.println(tmp.size());
-        for (Element listElement : tmp) {
+        for (Element listElement : dom.body().select("dl.element")) {
             // search backwards for header element do determine tag
             String tag = null;
             siblingLoop: for (int idx = listElement.elementSiblingIndex() - 1; idx >= 0; idx--) {
@@ -105,20 +103,39 @@ public class Parser {
                     if (dd.text().equalsIgnoreCase("Global Attributes")) {
                         element.supportsGlobalAttributes = true;
                     } else {
+                        // add attribute
                         String[] parts = dd.text().split("—");
+                        String name = parts[0];
+                        if (name.contains(":"))
+                            name = name.substring(name.indexOf(':') + 1);
+                        name = name.trim();
+
                         if (parts.length == 2)
-                            element.attributes.add(new HtmlAttribute(parts[0],
+                            element.attributes.add(new HtmlAttribute(name,
                                     parts[1]));
                         else {
                             if (!dd.text().contains(" "))
-                                element.attributes.add(new HtmlAttribute(
-                                        parts[0], ""));
+                                element.attributes.add(new HtmlAttribute(name,
+                                        ""));
                         }
                     }
                 }
             }
+
+            // add description
+            {
+                Element desc = listElement.parent().child(
+                        listElement.elementSiblingIndex() + 1);
+                element.description = desc.text();
+            }
         }
 
+        parseGlobalAttributes(dom, result);
+
+        return result;
+    }
+
+    private void parseGlobalAttributes(Document dom, HtmlStandard result) {
         // read global attributes
         {
             Element header = dom.getElementById("global-attributes");
@@ -130,13 +147,30 @@ public class Parser {
                 }
                 count++;
                 for (Element item : list.children()) {
-                    result.globalAttributes.add(new HtmlAttribute(item.text(),
-                            ""));
+                    String name = item.text();
+                    // suppress star for onXXX attributes
+                    if (name.endsWith("*"))
+                        name = name.substring(0, name.length() - 1);
+
+                    // read the description
+                    String desc = "";
+                    {
+                        Element descHeader = dom.getElementById("the-" + name
+                                + "-attribute");
+                        if (descHeader != null) {
+                            int descIdx = descHeader.elementSiblingIndex() + 1;
+                            Element next = descHeader.parent().child(descIdx);
+                            if (next.classNames().contains("status"))
+                                next = descHeader.parent().child(descIdx + 1);
+
+                            desc = next.text();
+                        }
+                    }
+                    result.globalAttributes.add(new HtmlAttribute(name.trim(),
+                            desc));
                 }
             }
         }
-
-        return result;
     }
 
 }

@@ -1,4 +1,4 @@
-package com.github.ruediste1.html5.std;
+package com.github.ruediste.html5.std;
 
 import com.google.common.base.Strings;
 
