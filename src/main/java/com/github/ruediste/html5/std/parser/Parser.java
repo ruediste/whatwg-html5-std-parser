@@ -128,6 +128,20 @@ public class Parser {
                         listElement.elementSiblingIndex() + 1);
                 element.description = desc.text();
             }
+
+            // check if there is an end tag omission
+            {
+                Element omissionDt = dom.getElementById("the-" + element.tag
+                        + "-element:concept-element-tag-omission");
+                if (omissionDt != null
+                        && omissionDt.parent().nextElementSibling() != null) {
+                    String omissionText = omissionDt.parent()
+                            .nextElementSibling().text();
+                    if (omissionText.contains("No end tag")) {
+                        element.endTagOmissed = true;
+                    }
+                }
+            }
         }
 
         parseGlobalAttributes(dom, result);

@@ -7,6 +7,7 @@ public class HtmlElement {
     public ArrayList<HtmlAttribute> attributes = new ArrayList<>();
     public boolean supportsGlobalAttributes;
     public String description = "";
+    public boolean endTagOmissed;
 
     void print() {
         System.out.println("Element: " + tag);
