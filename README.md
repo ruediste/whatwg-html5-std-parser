@@ -1,6 +1,8 @@
 whatwg-html5-std-parser
 =======================
 
+[![Build Status](https://travis-ci.org/ruediste/whatwg-html5-std-parser.svg)](https://travis-ci.org/ruediste/whatwg-html5-std-parser)
+
 A Parser for the WHATWG HTML5 standard.
 
 The WHATWG HTML5 is provided as HTML text document. This is a parser which extracts machine readable information from that document.
