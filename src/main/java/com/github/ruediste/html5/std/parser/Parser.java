@@ -7,10 +7,12 @@ import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import com.github.ruediste.html5.std.HtmlAttribute;
 import com.github.ruediste.html5.std.HtmlElement;
 import com.github.ruediste.html5.std.HtmlStandard;
+import com.github.ruediste.html5.std.InputType;
 
 public class Parser {
     public static String DEFAULT_USER_AGENT = "Mozilla/5.0 (Windows NT 5.1; rv:31.0) Gecko/20100101 Firefox/31.0";
@@ -146,6 +148,20 @@ public class Parser {
 
         parseGlobalAttributes(dom, result);
 
+        // read input types
+        {
+            Element table = dom.getElementById("attr-input-type-keywords");
+            Elements rows = table.getElementsByTag("tbody").get(0)
+                    .getElementsByTag("tr");
+            for (Element row : rows) {
+                InputType type = new InputType();
+                type.name = row.child(0).text();
+                type.dataType = row.child(2).text();
+                type.controlType = row.child(3).text();
+                result.inputTypes.add(type);
+            }
+        }
+
         return result;
     }
 
@@ -185,6 +201,7 @@ public class Parser {
                 }
             }
         }
+
     }
 
 }
