@@ -2,6 +2,9 @@ package com.github.ruediste.html5.std.parser;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
@@ -9,6 +12,8 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import com.github.ruediste.html5.std.AttributeType;
+import com.github.ruediste.html5.std.BooleanAttributeType;
 import com.github.ruediste.html5.std.HtmlAttribute;
 import com.github.ruediste.html5.std.HtmlElement;
 import com.github.ruediste.html5.std.HtmlStandard;
@@ -16,8 +21,7 @@ import com.github.ruediste.html5.std.InputType;
 
 public class Parser {
     public static String DEFAULT_USER_AGENT = "Mozilla/5.0 (Windows NT 5.1; rv:31.0) Gecko/20100101 Firefox/31.0";
-    public static String[] DEFAULT_HEADER = { "Accept-Encoding",
-            "gzip, deflated" };
+    public static String[] DEFAULT_HEADER = { "Accept-Encoding", "gzip, deflated" };
     public static String LOCATION = "https://html.spec.whatwg.org/";
     public static int TIMEOUT_DURATION = 60000;
     public static int UNBOUNDED_SIZE = 0;
@@ -93,10 +97,9 @@ public class Parser {
             result.elements.add(element);
 
             // search and add attributes
-            for (Element attributesHeader : listElement
-                    .getElementsContainingText("Content attributes:")) {
-                for (int idx = attributesHeader.elementSiblingIndex() + 1; idx < attributesHeader
-                        .parent().children().size(); idx++) {
+            for (Element attributesHeader : listElement.getElementsContainingText("Content attributes:")) {
+                for (int idx = attributesHeader.elementSiblingIndex() + 1; idx < attributesHeader.parent().children()
+                        .size(); idx++) {
                     Element dd = attributesHeader.parent().child(idx);
                     if (!"dd".equals(dd.tagName())) {
                         break;
@@ -113,12 +116,10 @@ public class Parser {
                         name = name.trim();
 
                         if (parts.length == 2)
-                            element.attributes.add(new HtmlAttribute(name,
-                                    parts[1]));
+                            element.attributes.add(new HtmlAttribute(name, parts[1]));
                         else {
                             if (!dd.text().contains(" "))
-                                element.attributes.add(new HtmlAttribute(name,
-                                        ""));
+                                element.attributes.add(new HtmlAttribute(name, ""));
                         }
                     }
                 }
@@ -126,19 +127,15 @@ public class Parser {
 
             // add description
             {
-                Element desc = listElement.parent().child(
-                        listElement.elementSiblingIndex() + 1);
+                Element desc = listElement.parent().child(listElement.elementSiblingIndex() + 1);
                 element.description = desc.text();
             }
 
             // check if there is an end tag omission
             {
-                Element omissionDt = dom.getElementById("the-" + element.tag
-                        + "-element:concept-element-tag-omission");
-                if (omissionDt != null
-                        && omissionDt.parent().nextElementSibling() != null) {
-                    String omissionText = omissionDt.parent()
-                            .nextElementSibling().text();
+                Element omissionDt = dom.getElementById("the-" + element.tag + "-element:concept-element-tag-omission");
+                if (omissionDt != null && omissionDt.parent().nextElementSibling() != null) {
+                    String omissionText = omissionDt.parent().nextElementSibling().text();
                     if (omissionText.contains("No end tag")) {
                         element.endTagOmissed = true;
                     }
@@ -151,8 +148,7 @@ public class Parser {
         // read input types
         {
             Element table = dom.getElementById("attr-input-type-keywords");
-            Elements rows = table.getElementsByTag("tbody").get(0)
-                    .getElementsByTag("tr");
+            Elements rows = table.getElementsByTag("tbody").get(0).getElementsByTag("tr");
             for (Element row : rows) {
                 InputType type = new InputType();
                 type.name = row.child(0).text();
@@ -162,7 +158,39 @@ public class Parser {
             }
         }
 
+        parseAttributeTypes(dom, result);
+
         return result;
+    }
+
+    private void parseAttributeTypes(Document dom, HtmlStandard result) {
+        HashMap<String, AttributeType> typeMap = new HashMap<>();
+
+        // parse types
+        Element table = dom.getElementById("attributes-1");
+        for (Element tr : table.getElementsByTag("tr")) {
+            String attributeName = tr.child(0).text();
+            Element type = tr.child(3);
+            if (!type.children().isEmpty()) {
+                Element child = type.child(0);
+                if ("a".equalsIgnoreCase(child.tagName())) {
+                    if ("#boolean-attribute".equals(child.attr("href"))) {
+                        typeMap.put(attributeName, new BooleanAttributeType());
+                    }
+                }
+            }
+        }
+
+        // apply types to result
+        applyAttributeTypes(typeMap, result.globalAttributes);
+        for (HtmlElement element : result.elements)
+            applyAttributeTypes(typeMap, element.attributes);
+    }
+
+    private void applyAttributeTypes(Map<String, AttributeType> typeMap, List<HtmlAttribute> attributes) {
+        for (HtmlAttribute attr : attributes) {
+            attr.type = typeMap.get(attr.name);
+        }
     }
 
     private void parseGlobalAttributes(Document dom, HtmlStandard result) {
@@ -185,8 +213,7 @@ public class Parser {
                     // read the description
                     String desc = "";
                     {
-                        Element descHeader = dom.getElementById("the-" + name
-                                + "-attribute");
+                        Element descHeader = dom.getElementById("the-" + name + "-attribute");
                         if (descHeader != null) {
                             int descIdx = descHeader.elementSiblingIndex() + 1;
                             Element next = descHeader.parent().child(descIdx);
@@ -196,8 +223,7 @@ public class Parser {
                             desc = next.text();
                         }
                     }
-                    result.globalAttributes.add(new HtmlAttribute(name.trim(),
-                            desc));
+                    result.globalAttributes.add(new HtmlAttribute(name.trim(), desc));
                 }
             }
         }
